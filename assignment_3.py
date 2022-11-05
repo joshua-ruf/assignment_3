@@ -168,7 +168,45 @@ title='dimensionality reduction dataset 1 pca variance'
 plot_and_save(title, data=df[df.algorithm=='PCA'], x="features", y="explained_variance", hue='algorithm', kind=sns.lineplot, alpha=0.5)
 
 
+# +
+N_FEATURES = 17  # half of "optimal" number of dimensions
 
+D = df[df.features==N_FEATURES].drop_duplicates(subset=['algorithm'])
+
+part3 = []
+for i, row in D.iterrows():
+    x = row['transform']
+    dr_algo = row['algorithm']
+    for c_algo in (KMeans, EM):
+        out = run_clustering(x, algo=c_algo)
+        for o in out:
+            o['dimension_reduction'] = dr_algo
+            if o['algorithm'] == 'GaussianMixture':
+                o['algorithm'] = 'EM'
+            
+        part3.extend(out)
+
+# -
+
+part3 = pd.DataFrame(part3)
+
+# +
+
+title = f'clustering with {N_FEATURES} features of dataset 1'
+plot_and_save(title, data=part3, x="k", y="silhouette_score", hue='dimension_reduction', style='algorithm')
+# -
+
+D[D.algorithm == 'PCA']
+
+# +
+x = D[D.algorithm == 'PCA']['transform'].iloc[0]
+pca1 = apply_pca2(x)
+temp = pd.DataFrame(pca1)
+temp['cluster'] = KMeans(5, random_state=0).fit(x).predict(x)
+
+title = 'kmeans dataset 1 with 17 features clusters pca 1 and 2'
+plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
+# -
 
 
 

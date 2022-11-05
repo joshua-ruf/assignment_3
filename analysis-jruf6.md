@@ -16,7 +16,7 @@
 - run dimensionality reduction and describe results
 - redo clustering with the dimensionality reduction (many results but describe most interesting)
 - run the neural network on the reduced dimension version of one data set
-- run the neural network on the reduced dimension version of one data set, using the clusters as labels
+- run the neural network on the reduced dimension version of one data set, using the clusters as labels (I guess using just two clusters for consistency)
 
 ##### Turn in:
 - briefly describe the datasets again
@@ -26,7 +26,7 @@
 - describe if the clusters were the same before and after dimensionality reduction
 - describe the difference in the neural network this time around with reduced dimension, and with the clusters as labels
 
-#### Datasets:
+### Datasets:
 
 For both datasets I normalize the features to be within the range -1 and 1.
 
@@ -38,7 +38,7 @@ This dataset consists of a number of employees, their pre hire survey scores (qu
 
 This dataset consists of transformed movie reviews from the website rogerebert.com for all 3.5 and 4 star reviews. The idea was to predict what movies since his death in 2013 should be given the classification "great movie" as the critics that took over his site have refrained from using that distinction. The text reviews were passed to NLTK's simple sentiment analysis which for each review simply creates an index for the number of positive, negative, neutral, and compound score which is some transformation of the first three. I think the fact that this feature contains information about the first three features will result in some interesting results. I also included the review length in characters. In total there are 2415 observations and 5 features.
 
-#### Clustering
+### Clustering
 
 ##### Dataset 1
 
@@ -58,13 +58,14 @@ Indeed that appears to be the case, with the exception of a tight cluster of poi
 
 ![](plots/em_dataset_1_clusters_pca_1_and_2.png)
 
-#### Dimensionality Reduction
+### Dimensionality Reduction
 
 On the x axis I've plotted number of features and on the y axis I've plotted the root mean squared difference between the original data and the data transformed into the smaller space and then projected back into the original space. This can be thought of as a measure of information loss since rmse of zero means that no information is stripped away while higher values correspond to more information loss. Looking at the figure there are a few things to note:
 
 1. the curvature of the relationship between number of features and information loss is different for each algorithm: PCA and ICA have a nice kink around feature 34 indicating that there are much more diminishing returns of adding features beyond that point. Variance Threshold is more linear with a smaller kink around the same place. Random Projections however have the opposite curve, indicating that the information gain (at least according to the crude RMSE metric being used) is actually greatest at about feature 35. This is totally possible since by choosing randomly the likelihood of choosing the most useful features increases as more features are chosen overall.
 2. the PCA and FastICA algorithms return almost the same results (blue plus orange line combines in seaborn to a nice brown). I'm a bit surprised by this, maybe for this particular dataset the orthogonality and statistical dependence achieve similar results.
 3. None of the algorithms point to there being just a handful of features that explain a large amount of the information contained in the original data.
+4. It makes sense to me that PCA and ICA would retain the most information, the randomized projections is a faster version of PCA (sacrificing choosing the optimal direction of variance) and variance threshold is just a much simpler approach that does not consider features together at all.
 
 Overall I'm not surprised, going into this (as well as the first) assignment, I knew this data contained a lot of noise and perhaps even measurement error such that dimensionality reduction is necessary but also bounded in its utility.
 
@@ -73,4 +74,17 @@ Overall I'm not surprised, going into this (as well as the first) assignment, I 
 These results are confirmed more or less by the variance explained, obtained from the eigenvalues of the PCA algorithm. Again, around feature 34 the additional variance explained by the last features is quite low. There appears to be a slight kind around feature 10, but it's very minor.
 
 ![](plots/dimensionality_reduction_dataset_1_pca_variance.png)
+
+### Clustering After Dimensionality Reduction
+
+While the visualizations above show that 32-34 is likely the optimal number of features to reduce to, I chose to reduce it more to get a better sense of how the clustering algorithms perform with a much smaller feature space. I chose 17 features, ran all four dimension reduction techniques and passed them to the two clustering algorithms. As before, EM chooses k=2 across all dimension reduction techniques. Interestingly, KMeans now does the same for most dimension reduction techniques, PCA being the only exception. Overall, we do see that the silhouette metrics are generally higher than with the full feature space. I think the combination of all silhouette scores being higher but the clustering algorithms preferring to use only one cluster is interesting. To me, it implies that the data does not have clear clusters.
+
+![](plots/Clustering_with_17_features_of_dataset_1.png)
+
+Showing the same first and second principle components, we see an almost identical story, indicating that the clusters have not moved much as a result of removing the least useful features.
+
+![](plots/kmeans_dataset_1_with_17_features_clusters_pca_1_and_2.png)
+
+
+
 

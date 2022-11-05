@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.1
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -75,7 +75,7 @@ def load_ebert():
     non_ebert_reviews.loc[:, features] = scaler.transform(non_ebert_reviews[features])
 
     return X, y, non_ebert_reviews
-    
+
 
 
 def run_cv(X, y, base_estimator, parameters, N=100, variance_threshold=None, oversample=False, **kwargs):

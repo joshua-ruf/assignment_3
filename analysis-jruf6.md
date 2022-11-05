@@ -1,23 +1,5 @@
 ## Assignment 3 - CS 7641 - Joshua Ruf
 
-##### implement 2 clustering algorithms:
-1. k means
-2. EM
-
-##### implement 4 dimensionality reduction algorithms:
-1. PCA
-2. ICA
-3. randomized PCA
-4. another (variance threshold)
-
-#### Steps:
-- with two datasets (from assignment 1)
-- run clustering algorithms and describe results
-- run dimensionality reduction and describe results
-- redo clustering with the dimensionality reduction (many results but describe most interesting)
-- run the neural network on the reduced dimension version of one data set
-- run the neural network on the reduced dimension version of one data set, using the clusters as labels (I guess using just two clusters for consistency)
-
 ##### Turn in:
 - briefly describe the datasets again
 - explain methods, i.e. how to choose k
@@ -85,6 +67,17 @@ Showing the same first and second principle components, we see an almost identic
 
 ![](plots/kmeans_dataset_1_with_17_features_clusters_pca_1_and_2.png)
 
+### Neural Network
 
+#### Full feature vs reduced feature dataset, predicting labels
 
+I ran the neural network from the first assignment twice using the same hyperparameters in the grid search cross validation. The first time I used the full featured dataset with 48 features, while the second time I used only the 17 features selected by PCA. In both scenarios I upsampled the minority class to deal with class imbalance, and used f1-score as the selection metric in cross validation. As such, the training accuracy score is not that helpful as it runs on the upsampled data.
+
+Unsurprisingly, the reduced feature dataset trained in less than half the time of the full feature dataset, 0.088s to 0.22s -- the numbers are not that different but remember there are just under 3000 training samples. The two models performed very similarly in terms of f1 score. In training, the best CV f1 score was 0.6658 for the smaller dataset compared to 0.6688 for the larger dataset. Testing on unseen data, the smaller model achieved an f1 score of 0.2261, and the larger model achieved an f1 score of 0.2269. That said, with the reduced training time, the smaller model is likely the better bet. Surprisingly the larger model opted to use a hidden layer with 2 neurons while the smaller model used 8 neurons. One would expect the opposite so I am of the opinion that this relates back to the original problems working with this data in assignment 1: it's really noisy. Since these data describe employment and pre hire surveys the data can be highly subjective and employees leave roles for any number of reasons that might not be predictable in data.
+
+#### Full feature vs reduced feature dataset, predicting clusters
+
+Using the reduced feature data, I predicted the clusters obtained using KMeans with k=2 since the original labels have two classes. This means compare the neural network's ability to predict the labels in the same way as the clusters. As well, we can begin by seeing how well the clusters approximate the labels. In our data the labels match the clusters with an accuracy of 72% and this corresponds to an f1-score of about 0.32 for comparison. This should not be thought of as a measure of how well KMeans performs because our original labels could have been very poorly designed and contain no information at all - were that the case it does not reflect badly on the clustering algorithm but instead the practitioner (or the data).
+
+Overall, the neural network had a comparatively easy time predicting the clusters as compared to the actual labels. For both f1 score and accuracy it achieved train and test scores of over 99%. This speaks to the way in which the means are constructed, and ease with which a neural network can learn that kind of linear function. Since the clusters are born out of the data itself, there is effectively no redundant information, every feature is used in the construction of a cluster. It seems likely then, that by the universal approximation theorem, a neural network with 3 sufficiently large hidden layers can predict the clusters coming from a KMeans algorithm with arbitrarily high precision. Furthermore, a number of models fit in this CV process were stopped early by reaching the max number of iterations, further indication that improving upon the accuracy is possible.
 

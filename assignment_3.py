@@ -18,6 +18,7 @@ import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from pprint import pprint
 
 from helpers import load_data
 
@@ -105,23 +106,23 @@ def run_dimensionality_reduction(X, y=None, algo=PCA, k=None):
 
 
 # +
-X1, y1 = load_data()
-print(X1.shape)
+X, y = load_data()
+print(X.shape)
 
 # X2, y2, _ = load_data(ebert=True)
 # print(X2.shape)
 
 # -
 
-df = pd.DataFrame(run_clustering(X1, k=range(2, 11)))
+df = pd.DataFrame(run_clustering(X, k=range(2, 11)))
 title = 'kmeans dataset 1'
 plot_and_save(title, data=df, x="k", y="silhouette_score")
 
 
 # +
-pca1 = apply_pca2(X1)
+pca1 = apply_pca2(X)
 temp = pd.DataFrame(pca1)
-temp['cluster'] = df[df.best==True].fit.iloc[0].predict(X1)
+temp['cluster'] = df[df.best==True].fit.iloc[0].predict(X)
 
 title = 'kmeans dataset 1 clusters pca 1 and 2'
 plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
@@ -129,33 +130,33 @@ plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', s
 
 
 
-df = pd.DataFrame(run_clustering(X1, algo=EM, k=range(2, 11)))
+df = pd.DataFrame(run_clustering(X, algo=EM, k=range(2, 11)))
 title = 'em dataset 1'
 plot_and_save(title, data=df, x="k", y="silhouette_score")
 
 
 # +
-pca1 = apply_pca2(X1)
+pca1 = apply_pca2(X)
 temp = pd.DataFrame(pca1)
-temp['cluster'] = df[df.best==True].fit.iloc[0].predict(X1)
+temp['cluster'] = df[df.best==True].fit.iloc[0].predict(X)
 
 title = 'em dataset 1 clusters pca 1 and 2'
 plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
 # -
 
-run_dimensionality_reduction(X1, k=range(2, 3))[0]['fit'].get_covariance()
+run_dimensionality_reduction(X, k=range(2, 3))[0]['fit'].get_covariance()
 
 # +
 ########## dimensionality reduction
 
-df = pd.DataFrame(run_dimensionality_reduction(X1))
+df = pd.DataFrame(run_dimensionality_reduction(X))
 
 # -
 
 dr = []
 for i, algo in enumerate((PCA, FastICA, RP, VarianceThreshold)):
     k = np.arange(0, 1, 0.025) if i == 3 else None
-    dr.extend(run_dimensionality_reduction(X1, algo=algo, k=k))
+    dr.extend(run_dimensionality_reduction(X, algo=algo, k=k))
 
 
 df = pd.DataFrame(dr)
@@ -164,8 +165,10 @@ title='dimensionality reduction dataset 1'
 plot_and_save(title, data=df, x="features", y="rmse", hue='algorithm', kind=sns.lineplot, alpha=0.5)
 
 
+
 title='dimensionality reduction dataset 1 pca variance'
 plot_and_save(title, data=df[df.algorithm=='PCA'], x="features", y="explained_variance", hue='algorithm', kind=sns.lineplot, alpha=0.5)
+
 
 
 # +
@@ -199,14 +202,178 @@ plot_and_save(title, data=part3, x="k", y="silhouette_score", hue='dimension_red
 D[D.algorithm == 'PCA']
 
 # +
-x = D[D.algorithm == 'PCA']['transform'].iloc[0]
+x = D[D.algorithm == 'PCA']['transform'].iloc[0] ### PCA
 pca1 = apply_pca2(x)
 temp = pd.DataFrame(pca1)
 temp['cluster'] = KMeans(5, random_state=0).fit(x).predict(x)
 
 title = 'kmeans dataset 1 with 17 features clusters pca 1 and 2'
 plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
+
+# +
+from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.metrics import f1_score
+from imblearn.over_sampling import RandomOverSampler
+
+# original dataset
+print(X.shape)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.2, stratify=y)
+X_train, y_train = RandomOverSampler(random_state=0).fit_resample(X_train, y_train)
+
+parameters = {
+    'hidden_layer_sizes': [(x,) for x in 2 ** np.arange(1, 5)],
+    'activation': ['logistic'],
+    'solver': ['sgd'],
+    'alpha': [0],
+    'batch_size': 2 ** np.arange(7, 11),
+    'learning_rate_init': [0.001, 0.002, 0.003],
+    'max_iter': [500],
+    'momentum': [0, 0.25, 0.5, 0.75],
+    'early_stopping': [True],
+    'n_iter_no_change': [20],
+    'random_state': [0],
+}
+
+N=200
+cv = RandomizedSearchCV(
+    MLPClassifier(),
+    parameters,
+    n_iter=N, scoring='f1', n_jobs=-1,
+    random_state=0, verbose=1,
+)
+cv.fit(X_train, y_train)
+
+# store all results for exploration
+frame = pd.DataFrame(cv.cv_results_)
+
+pprint({
+    'best_params': cv.best_params_,
+    'best_score': cv.best_score_,
+    'best_time': frame[frame.rank_test_score==1].mean_fit_time.iloc[0],
+})
+
+# get the best model and run over the entire train and test set for comparison
+best_estimator = cv.best_estimator_
+pprint({
+    'full_train_f1': f1_score(best_estimator.predict(X_train), y_train),
+    'full_test_f1': f1_score(best_estimator.predict(X_test), y_test),
+    'full_train_accuracy': best_estimator.score(X_train, y_train),
+    'full_test_accuracy': best_estimator.score(X_test, y_test),
+})
 # -
+
+
+
+# +
+# dimenionality reduced dataset
+print(x.shape)
+
+X_train, X_test, y_train, y_test = train_test_split(x, y, random_state=0, test_size=0.2, stratify=y)
+X_train, y_train = RandomOverSampler(random_state=0).fit_resample(X_train, y_train)
+
+parameters = {
+    'hidden_layer_sizes': [(x,) for x in 2 ** np.arange(1, 5)],
+    'activation': ['logistic'],
+    'solver': ['sgd'],
+    'alpha': [0],
+    'batch_size': 2 ** np.arange(7, 11),
+    'learning_rate_init': [0.001, 0.002, 0.003],
+    'max_iter': [500],
+    'momentum': [0, 0.25, 0.5, 0.75],
+    'early_stopping': [True],
+    'n_iter_no_change': [20],
+    'random_state': [0],
+}
+
+N=200
+cv = RandomizedSearchCV(
+    MLPClassifier(),
+    parameters,
+    n_iter=N, scoring='f1', n_jobs=-1,
+    random_state=0, verbose=1,
+)
+cv.fit(X_train, y_train)
+
+# store all results for exploration
+frame = pd.DataFrame(cv.cv_results_)
+
+pprint({
+    'best_params': cv.best_params_,
+    'best_score': cv.best_score_,
+    'best_time': frame[frame.rank_test_score==1].mean_fit_time.iloc[0],
+})
+
+# get the best model and run over the entire train and test set for comparison
+best_estimator = cv.best_estimator_
+pprint({
+    'full_train_f1': f1_score(best_estimator.predict(X_train), y_train),
+    'full_test_f1': f1_score(best_estimator.predict(X_test), y_test),
+    'full_train_accuracy': best_estimator.score(X_train, y_train),
+    'full_test_accuracy': best_estimator.score(X_test, y_test),
+})
+
+# +
+# dimenionality reduced dataset, predicting clusters
+print(x.shape)
+
+# two means since our original data is two means
+clusters = KMeans(2, random_state=0).fit(x).predict(x)
+
+X_train, X_test, y_train, y_test = train_test_split(x, clusters, random_state=0, test_size=0.2, stratify=clusters)
+X_train, y_train = RandomOverSampler(random_state=0).fit_resample(X_train, y_train)
+
+parameters = {
+    'hidden_layer_sizes': [(x,) for x in 2 ** np.arange(1, 5)],
+    'activation': ['logistic'],
+    'solver': ['sgd'],
+    'alpha': [0],
+    'batch_size': 2 ** np.arange(7, 11),
+    'learning_rate_init': [0.001, 0.002, 0.003],
+    'max_iter': [500],
+    'momentum': [0, 0.25, 0.5, 0.75],
+    'early_stopping': [True],
+    'n_iter_no_change': [20],
+    'random_state': [0],
+}
+
+N=200
+cv = RandomizedSearchCV(
+    MLPClassifier(),
+    parameters,
+    n_iter=N, scoring='f1', n_jobs=-1,
+    random_state=0, verbose=1,
+)
+cv.fit(X_train, y_train)
+
+# store all results for exploration
+frame = pd.DataFrame(cv.cv_results_)
+
+pprint({
+    'best_params': cv.best_params_,
+    'best_score': cv.best_score_,
+    'best_time': frame[frame.rank_test_score==1].mean_fit_time.iloc[0],
+})
+
+# get the best model and run over the entire train and test set for comparison
+best_estimator = cv.best_estimator_
+pprint({
+    'full_train_f1': f1_score(best_estimator.predict(X_train), y_train),
+    'full_test_f1': f1_score(best_estimator.predict(X_test), y_test),
+    'full_train_accuracy': best_estimator.score(X_train, y_train),
+    'full_test_accuracy': best_estimator.score(X_test, y_test),
+})
+# -
+
+(max( # f1 score
+    f1_score(y, clusters),
+    f1_score(y, 1 - clusters),
+),
+max( # accuracy
+    np.mean(y == clusters),
+    np.mean(y == 1 - clusters),
+))
 
 
 

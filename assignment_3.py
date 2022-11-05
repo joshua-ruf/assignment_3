@@ -32,6 +32,8 @@ from sklearn.feature_selection import VarianceThreshold
 # https://scikit-learn.org/stable/auto_examples/cluster/plot_kmeans_silhouette_analysis.html
 from sklearn.metrics import silhouette_score, mean_squared_error
 
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
 # -
 
 def run_clustering(X, y=None, algo=KMeans, k=range(2, 11)):
@@ -263,7 +265,9 @@ pprint({
     'full_test_accuracy': best_estimator.score(X_test, y_test),
 })
 # -
-
+cm = confusion_matrix(y_test, best_estimator.predict(X_test))
+title = 'neural net confusion matrix full dataset 1'
+plot_and_save(title, kind=sns.heatmap, data=cm, annot=True, fmt=".0f")
 
 
 # +
@@ -313,6 +317,11 @@ pprint({
     'full_train_accuracy': best_estimator.score(X_train, y_train),
     'full_test_accuracy': best_estimator.score(X_test, y_test),
 })
+# -
+
+cm = confusion_matrix(y_test, best_estimator.predict(X_test))
+title = 'neural net confusion matrix reduced dataset 1'
+plot_and_save(title, kind=sns.heatmap, data=cm, annot=True, fmt=".0f")
 
 # +
 # dimenionality reduced dataset, predicting clusters
@@ -365,6 +374,10 @@ pprint({
     'full_test_accuracy': best_estimator.score(X_test, y_test),
 })
 # -
+
+cm = confusion_matrix(y_test, best_estimator.predict(X_test))
+title = 'neural net confusion matrix reduced dataset 1 predicting clusters'
+plot_and_save(title, kind=sns.heatmap, data=cm, annot=True, fmt=".0f")
 
 (max( # f1 score
     f1_score(y, clusters),

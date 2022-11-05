@@ -55,6 +55,7 @@ def run_clustering(X, y=None, algo=KMeans, k=range(2, 11)):
     return out
 
 
+
 def apply_pca2(X, y=None):
     pca = PCA(n_components=2, random_state=0)
     return pca.fit_transform(X)
@@ -66,7 +67,7 @@ def plot_and_save(title, kind=sns.lineplot, **kwargs):
     plot.set_title(title.upper())
     fig = plot.get_figure()
     fig.savefig(f"plots/{title.replace(' ', '_')}.png")
-
+    
 
 
 def rmse_compared_to_original(X, algo):
@@ -107,18 +108,15 @@ def run_dimensionality_reduction(X, y=None, algo=PCA, k=None):
     return out
 
 
-# +
+
 X, y = load_data()
 print(X.shape)
 
-# X2, y2, _ = load_data(ebert=True)
-# print(X2.shape)
-
-# -
 
 df = pd.DataFrame(run_clustering(X, k=range(2, 11)))
 title = 'kmeans dataset 1'
 plot_and_save(title, data=df, x="k", y="silhouette_score")
+
 
 
 # +
@@ -128,13 +126,12 @@ temp['cluster'] = df[df.best==True].fit.iloc[0].predict(X)
 
 title = 'kmeans dataset 1 clusters pca 1 and 2'
 plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
+
 # -
-
-
-
 df = pd.DataFrame(run_clustering(X, algo=EM, k=range(2, 11)))
 title = 'em dataset 1'
 plot_and_save(title, data=df, x="k", y="silhouette_score")
+
 
 
 # +
@@ -144,24 +141,22 @@ temp['cluster'] = df[df.best==True].fit.iloc[0].predict(X)
 
 title = 'em dataset 1 clusters pca 1 and 2'
 plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
+
 # -
 
-run_dimensionality_reduction(X, k=range(2, 3))[0]['fit'].get_covariance()
-
-# +
 ########## dimensionality reduction
-
 df = pd.DataFrame(run_dimensionality_reduction(X))
 
-# -
 
 dr = []
 for i, algo in enumerate((PCA, FastICA, RP, VarianceThreshold)):
     k = np.arange(0, 1, 0.025) if i == 3 else None
     dr.extend(run_dimensionality_reduction(X, algo=algo, k=k))
+    
 
 
 df = pd.DataFrame(dr)
+
 
 title='dimensionality reduction dataset 1'
 plot_and_save(title, data=df, x="features", y="rmse", hue='algorithm', kind=sns.lineplot, alpha=0.5)
@@ -195,13 +190,13 @@ for i, row in D.iterrows():
 
 part3 = pd.DataFrame(part3)
 
-# +
 
 title = f'clustering with {N_FEATURES} features of dataset 1'
 plot_and_save(title, data=part3, x="k", y="silhouette_score", hue='dimension_reduction', style='algorithm')
-# -
+
 
 D[D.algorithm == 'PCA']
+
 
 # +
 x = D[D.algorithm == 'PCA']['transform'].iloc[0] ### PCA
@@ -211,6 +206,7 @@ temp['cluster'] = KMeans(5, random_state=0).fit(x).predict(x)
 
 title = 'kmeans dataset 1 with 17 features clusters pca 1 and 2'
 plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
+
 
 # +
 from sklearn.neural_network import MLPClassifier
@@ -264,6 +260,7 @@ pprint({
     'full_train_accuracy': best_estimator.score(X_train, y_train),
     'full_test_accuracy': best_estimator.score(X_test, y_test),
 })
+
 # -
 cm = confusion_matrix(y_test, best_estimator.predict(X_test))
 title = 'neural net confusion matrix full dataset 1'
@@ -317,11 +314,13 @@ pprint({
     'full_train_accuracy': best_estimator.score(X_train, y_train),
     'full_test_accuracy': best_estimator.score(X_test, y_test),
 })
+
 # -
 
 cm = confusion_matrix(y_test, best_estimator.predict(X_test))
 title = 'neural net confusion matrix reduced dataset 1'
 plot_and_save(title, kind=sns.heatmap, data=cm, annot=True, fmt=".0f")
+
 
 # +
 # dimenionality reduced dataset, predicting clusters
@@ -373,11 +372,13 @@ pprint({
     'full_train_accuracy': best_estimator.score(X_train, y_train),
     'full_test_accuracy': best_estimator.score(X_test, y_test),
 })
+
 # -
 
 cm = confusion_matrix(y_test, best_estimator.predict(X_test))
 title = 'neural net confusion matrix reduced dataset 1 predicting clusters'
 plot_and_save(title, kind=sns.heatmap, data=cm, annot=True, fmt=".0f")
+
 
 (max( # f1 score
     f1_score(y, clusters),
@@ -387,6 +388,7 @@ max( # accuracy
     np.mean(y == clusters),
     np.mean(y == 1 - clusters),
 ))
+
 
 
 

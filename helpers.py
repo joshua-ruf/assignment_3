@@ -40,10 +40,12 @@ def load_data(ebert=False):
     y = df['terminated_in_first_6_months']
     X = df.drop(columns=['terminated_in_first_6_months'])        
         
+    features = list(X.columns)
+        
     # scale all inputs between -1 and 1
     X = MinMaxScaler((-1, 1)).fit_transform(X)
 
-    return X, y
+    return X, y, features
 
 
 def load_ebert():
@@ -71,6 +73,6 @@ def load_ebert():
     non_ebert_reviews = df[~ebert_index]
     non_ebert_reviews.loc[:, features] = scaler.transform(non_ebert_reviews[features])
 
-    return X, y, non_ebert_reviews
+    return X, y, features
 
 

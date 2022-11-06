@@ -1,0 +1,1 @@
+Code, plots, and data available at: https://github.com/joshua-ruf/assignment_3

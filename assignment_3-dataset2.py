@@ -67,7 +67,7 @@ def plot_and_save(title, kind=sns.lineplot, **kwargs):
     plot.set_title(title.upper())
     fig = plot.get_figure()
     fig.savefig(f"plots/{title.replace(' ', '_')}.png")
-    
+
 
 
 def rmse_compared_to_original(X, algo):
@@ -109,14 +109,14 @@ def run_dimensionality_reduction(X, y=None, algo=PCA, k=None):
 
 
 
-X, y, features = load_data()
+X, y, features = load_data(ebert=True)
 print(X.shape)
 
 
 features
 
 df = pd.DataFrame(run_clustering(X, k=range(2, 11)))
-title = 'kmeans dataset 1'
+title = 'kmeans dataset 2'
 plot_and_save(title, data=df, x="k", y="silhouette_score")
 
 
@@ -126,12 +126,12 @@ pca1 = apply_pca2(X)
 temp = pd.DataFrame(pca1)
 temp['cluster'] = df[df.best==True].fit.iloc[0].predict(X)
 
-title = 'kmeans dataset 1 clusters pca 1 and 2'
+title = 'kmeans dataset 2 clusters pca 1 and 2'
 plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
 
 # -
 df = pd.DataFrame(run_clustering(X, algo=EM, k=range(2, 11)))
-title = 'em dataset 1'
+title = 'em dataset 2'
 plot_and_save(title, data=df, x="k", y="silhouette_score")
 
 
@@ -141,7 +141,7 @@ pca1 = apply_pca2(X)
 temp = pd.DataFrame(pca1)
 temp['cluster'] = df[df.best==True].fit.iloc[0].predict(X)
 
-title = 'em dataset 1 clusters pca 1 and 2'
+title = 'em dataset 2 clusters pca 1 and 2'
 plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
 
 # -
@@ -152,26 +152,26 @@ df = pd.DataFrame(run_dimensionality_reduction(X))
 
 dr = []
 for i, algo in enumerate((PCA, FastICA, RP, VarianceThreshold)):
-    k = np.arange(0, 1, 0.025) if i == 3 else None
+    k = np.arange(0, 0.6, 0.025) if i == 3 else None
     dr.extend(run_dimensionality_reduction(X, algo=algo, k=k))
-    
+
 
 
 df = pd.DataFrame(dr)
 
 
-title='dimensionality reduction dataset 1'
+title='dimensionality reduction dataset 2'
 plot_and_save(title, data=df, x="features", y="rmse", hue='algorithm', kind=sns.lineplot, alpha=0.5)
 
 
 
-title='dimensionality reduction dataset 1 pca variance'
+title='dimensionality reduction dataset 2 pca variance'
 plot_and_save(title, data=df[df.algorithm=='PCA'], x="features", y="explained_variance", hue='algorithm', kind=sns.lineplot, alpha=0.5)
 
 
 
 # +
-N_FEATURES = 17  # half of "optimal" number of dimensions
+N_FEATURES = 2  # "optimal" number of dimensions
 
 D = df[df.features==N_FEATURES].drop_duplicates(subset=['algorithm'])
 
@@ -193,7 +193,7 @@ for i, row in D.iterrows():
 part3 = pd.DataFrame(part3)
 
 
-title = f'clustering with {N_FEATURES} features of dataset 1'
+title = f'clustering with {N_FEATURES} features of dataset 2'
 plot_and_save(title, data=part3, x="k", y="silhouette_score", hue='dimension_reduction', style='algorithm')
 
 
@@ -204,9 +204,9 @@ D[D.algorithm == 'PCA']
 x = D[D.algorithm == 'PCA']['transform'].iloc[0] ### PCA
 pca1 = apply_pca2(x)
 temp = pd.DataFrame(pca1)
-temp['cluster'] = KMeans(5, random_state=0).fit(x).predict(x)
+temp['cluster'] = KMeans(2, random_state=0).fit(x).predict(x)
 
-title = 'kmeans dataset 1 with 17 features clusters pca 1 and 2'
+title = 'kmeans dataset 2 with 17 features clusters pca 1 and 2'
 plot_and_save(title, kind=sns.scatterplot, data=temp, x=0, y=1, hue='cluster', style='cluster')
 
 
@@ -265,7 +265,7 @@ pprint({
 
 # -
 cm = confusion_matrix(y_test, best_estimator.predict(X_test))
-title = 'neural net confusion matrix full dataset 1'
+title = 'neural net confusion matrix full dataset 2'
 plot_and_save(title, kind=sns.heatmap, data=cm, annot=True, fmt=".0f")
 
 
@@ -320,7 +320,7 @@ pprint({
 # -
 
 cm = confusion_matrix(y_test, best_estimator.predict(X_test))
-title = 'neural net confusion matrix reduced dataset 1'
+title = 'neural net confusion matrix reduced dataset 2'
 plot_and_save(title, kind=sns.heatmap, data=cm, annot=True, fmt=".0f")
 
 
@@ -378,7 +378,7 @@ pprint({
 # -
 
 cm = confusion_matrix(y_test, best_estimator.predict(X_test))
-title = 'neural net confusion matrix reduced dataset 1 predicting clusters'
+title = 'neural net confusion matrix reduced dataset 2 predicting clusters'
 plot_and_save(title, kind=sns.heatmap, data=cm, annot=True, fmt=".0f")
 
 
@@ -391,43 +391,42 @@ max( # accuracy
     np.mean(y == 1 - clusters),
 ))
 
-
 for i, f in enumerate(features):
     print('-', i, f)
 
 # +
 #### exploring clusters
 
-kmeans = KMeans(5, random_state=0).fit(X)
+kmeans = KMeans(2, random_state=0).fit(X)
 
 kmeans = pd.DataFrame(kmeans.cluster_centers_).T
 kmeans['features'] = features
 
-title = 'Kmeans 5 cluster comparison dataset 1'
+title = 'Kmeans 2 cluster comparison dataset 2'
 plot_and_save(title, kind=sns.lineplot, data=kmeans)
 
 
 # +
 #### exploring principle components
 
-pca = PCA(17, random_state=0).fit(X)
+pca = PCA(2, random_state=0).fit(X)
 pca = pd.DataFrame(pca.components_.T).iloc[:, :5]
 pca['features'] = features
 
-title = 'pca top 5 components comparison dataset 1'
+title = 'pca top 2 components comparison dataset 2'
 plot_and_save(title, kind=sns.lineplot, data=pca)
 
 
-# +
-#### exploring principle components
 
-ica = FastICA(17, random_state=0).fit(X)
+# +
+#### exploring ICA components
+
+ica = FastICA(2, random_state=0).fit(X)
 ica = pd.DataFrame(ica.components_.T).iloc[:, :5]
 pca['features'] = features
 
-title = 'ica top 5 components comparison dataset 1'
+title = 'ica top 2 components comparison dataset 2'
 plot_and_save(title, kind=sns.lineplot, data=ica)
-
 # -
 
 
